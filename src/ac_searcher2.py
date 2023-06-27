@@ -2,9 +2,16 @@ import hashlib
 import hmac
 import json
 import datetime
-
+import asyncio
+import aiohttp
 import requests
 from aws_requests_auth.aws_auth import AWSRequestsAuth, getSignatureKey
+from aws_request_signer import AwsRequestSigner
+
+from functools import wraps
+
+
+from asyncio.proactor_events import _ProactorBasePipeTransport
 
 
 class AWSRequestsAuth2(AWSRequestsAuth):
@@ -158,70 +165,102 @@ class Ac_Searcher2():
                                 aws_service='appsync',
                                 aws_token=self.session_token)
 
-    def get_air_bounds(self, ori: str, des: str, date: str, number_of_passengers: int):
-        headers = {
-            "Host": "akamai-gw.dbaas.aircanada.com",
-            "content-type": "application/json",
-            "accept": "*/*",
-            # "accept-language": "zh-CN,zh-Hans;q=0.9",
-            "user-agent": "aws-sdk-ios/3.5.0 AppSyncClient",
-        }
-        cookies = {
-        }
-        url = "https://akamai-gw.dbaas.aircanada.com/appsync/lfs"
-        data = {
-            "variables": {
-                "uid": None,
-                "numberOfRewards": "0",
-                "pointOfSale": "ACMobile3",
-                "fareBasisCode": "",
-                "type": "OneWay",
-                "timestamp": None,
-                "selectionID": "",
-                "currency": "CAD",
-                "sessionID": "",
-                "language": "en",
-                "signature": None,
-                "bounds": [
-                    {
-                        "origin": ori,
-                        "departureDate": date,
-                        "destination": des
-                    }
-                ],
-                "benefitBalanceCode": "",
-                "bookingClassCode": "",
-                "passengers": {
-                    "adult": number_of_passengers,
-                    "passengerTotal": number_of_passengers,
-                    "youth": 0,
-                    "child": 0,
-                    "infantLap": 0
+    def get_auth_signer(self):
+        return AwsRequestSigner(region='us-east-2',
+                                access_key_id=self.access_key,
+                                secret_access_key=self.secret_key,
+                                service='appsync',
+                                session_token=self.session_token)
+
+    async def get_air_bounds(self, ori: str, des: str, date: str, number_of_passengers: int):
+        print("getting air bounds")
+        async with aiohttp.ClientSession() as session:
+            print("in async air bounds")
+            headers = {
+                "Host": "akamai-gw.dbaas.aircanada.com",
+                "content-type": "application/json",
+                "accept": "*/*",
+                # "accept-language": "zh-CN,zh-Hans;q=0.9",
+                "user-agent": "aws-sdk-ios/3.5.0 AppSyncClient",
+            }
+            cookies = {
+            }
+            url = "https://akamai-gw.dbaas.aircanada.com/appsync/lfs"
+            data = {
+                "variables": {
+                    "uid": None,
+                    "numberOfRewards": "0",
+                    "pointOfSale": "ACMobile3",
+                    "fareBasisCode": "",
+                    "type": "OneWay",
+                    "timestamp": None,
+                    "selectionID": "",
+                    "currency": "CAD",
+                    "sessionID": "",
+                    "language": "en",
+                    "signature": None,
+                    "bounds": [
+                        {
+                            "origin": ori,
+                            "departureDate": date,
+                            "destination": des
+                        }
+                    ],
+                    "benefitBalanceCode": "",
+                    "bookingClassCode": "",
+                    "passengers": {
+                        "adult": number_of_passengers,
+                        "passengerTotal": number_of_passengers,
+                        "youth": 0,
+                        "child": 0,
+                        "infantLap": 0
+                    },
+                    "frequentFlyer": None
                 },
-                "frequentFlyer": None
-            },
-            "query": "query GetFareRedemption($pointOfSale: String!, $currency: String!, $language: String!, $type: String!, $bounds: [SearchBoundInput]!, $passengers: PassengersInput!, $selectionID: String!, $bookingClassCode: String!, $fareBasisCode: String!, $frequentFlyer: String, $sessionID: String, $benefitBalanceCode: String, $numberOfRewards: String, $uid: String, $signature: String, $timestamp: String) {\n  getFareRedemption(pointOfSale: $pointOfSale, currency: $currency, language: $language, type: $type, bounds: $bounds, passengers: $passengers, selectionID: $selectionID, bookingClassCode: $bookingClassCode, fareBasisCode: $fareBasisCode, frequentFlyer: $frequentFlyer, sessionID: $sessionID, benefitBalanceCode: $benefitBalanceCode, numberOfRewards: $numberOfRewards, uid: $uid, signature: $signature, timestamp: $timestamp) {\n    __typename\n    searchInformation {\n      __typename\n      pointOfSale\n      currency\n      language\n      type\n      bounds {\n        __typename\n        origin\n        destination\n        departureDate\n      }\n      passengers {\n        __typename\n        adult\n        youth\n        child\n        infantLap\n        passengerTotal\n      }\n      sessionID\n    }\n    ac2uErrorsWarnings {\n      __typename\n      code\n      type\n      message\n    }\n    errors {\n      __typename\n      lang\n      context\n      systemService\n      systemErrorType\n      systemErrorCode\n      systemErrorMessage\n      friendlyCode\n      friendlyTitle\n      friendlyMessage\n      closeLabel\n      actions {\n        __typename\n        number\n        buttonLabel\n        action\n      }\n    }\n    bound {\n      __typename\n      boundSolution {\n        __typename\n        tripType\n        segmentCount\n        connectionCount\n        containsDirect\n        scheduledDepartureDateTime\n        scheduledArrivalDateTime\n        durationTotal\n        flightSegments {\n          __typename\n          segmentNumber\n          flightNumber\n          originAirport\n          originTerminal\n          destinationAirport\n          destinationTerminal\n          scheduledDepartureDateTime\n          scheduledArrivalDateTime\n          segmentDuration\n          stops {\n            __typename\n            stopAirport\n            disembarkationRequired\n          }\n          lastStop {\n            __typename\n            stopCode\n            stopLocation\n          }\n          equipmentType {\n            __typename\n            aircraftCode\n            aircraftName\n          }\n          airline {\n            __typename\n            operatingCode\n            operatingName\n            marketingCode\n            marketingName\n            userFriendlyCode\n            acOperated\n          }\n          departsEarly\n          stopCount\n          isTrainIndicator\n          isBusIndicator\n        }\n        connection {\n          __typename\n          connectionNumber\n          connectionAirport\n          startTime\n          endTime\n          connectionDuration\n          previousFlight {\n            __typename\n            previousFlightOperatorCode\n            previousFlightNumber\n          }\n          nextFlight {\n            __typename\n            nextFlightOperatorCode\n            nextFlightNumber\n          }\n          overNight\n          isAirportChange\n        }\n        fare {\n          __typename\n          cabins {\n            __typename\n            cabinCode\n            cabinName\n            shortCabin\n            fareAvailable {\n              __typename\n              bookingClass {\n                __typename\n                marketingCode\n                flightNumber\n                bookingClassCode\n                fareBasisCode\n                noOfSeats\n                alertLowSeats\n                comment\n                selectionID\n                meal {\n                  __typename\n                  mealCode\n                  mealName\n                }\n                segmentCabinName\n              }\n              fareFamily\n              shortFareFamily\n              refundable\n              percentageInSelectedCabin\n              promoApplicable\n              priorityRewardApplicable\n              revenueBooking {\n                __typename\n                baseFare\n                feesTotal\n                taxesTotal\n                fareTotal\n                fareTotalRounded\n              }\n              redemptionBooking {\n                __typename\n                cashPortion {\n                  __typename\n                  baseFare\n                  taxesTotal\n                  fareTotal\n                  fareTotalRounded\n                  taxesTotalRounded\n                  currencyCode\n                }\n                pointsPortion {\n                  __typename\n                  baseFarePoints\n                  taxesTotalPoints\n                  fareTotalPoints\n                  baseFarePointsRounded\n                  fareTotalPointsRounded\n                  pointsIndicator\n                  displayFormat {\n                    __typename\n                    displayPoints\n                    displayDollarAmount\n                    displayPointsIndicator\n                  }\n                }\n              }\n              isPureUpsell\n              mixedCabin {\n                __typename\n                mixedNumber\n                marketingCode\n                flightNumber\n                origin\n                destination\n                actualCabinCode\n                actualCabinName\n              }\n              submitReview {\n                __typename\n                segment {\n                  __typename\n                  selectionID\n                  bookingClassCode\n                  fareBasisCode\n                  departureDate\n                  arrivalDate\n                  origin\n                  destination\n                  flightNumber\n                  carrierCode\n                  fareBreakpoint\n                  stopCode\n                  stopCount\n                }\n              }\n              priceRequestInformation {\n                __typename\n                accountCode\n                acPromoInformation {\n                  __typename\n                  promoCode\n                  promoCodeType\n                  discountValue\n                  expiryDate\n                  promoCodeCurrency\n                }\n                acError {\n                  __typename\n                  errorFlag\n                  errorReason\n                  errorMessage\n                  errorCode\n                }\n              }\n            }\n          }\n        }\n        operatingDisclosure\n        carrierType\n      }\n      boundNumber\n      originAirport\n      destinationAirport\n      departureDate\n      cubaDestination\n      market\n      resultSummary {\n        __typename\n        cabinCode\n        cabinName\n        cabinShortName\n        uniqueResult\n        lowestFare\n        lowestFareRounded\n        lowestFareDisplayFormat\n        pointIndicatorDisplayFormat\n      }\n    }\n    benefits {\n      __typename\n      ticketAttributes {\n        __typename\n        fareFamily\n        marketingCarrierCode\n        carrierTypeBenefits\n        Attribute {\n          __typename\n          attributeNumber\n          name\n          description\n          icon\n          shortlist\n          assessment\n          value {\n            __typename\n            value\n          }\n          category {\n            __typename\n            name\n          }\n        }\n      }\n      productAttributes {\n        __typename\n        cabinCode\n        cabinName\n        shortCabin\n        marketingCarrierCode\n        Attributes {\n          __typename\n          attributeNumber\n          name\n          description\n          icon\n          shortlist\n          value {\n            __typename\n            value\n          }\n          category {\n            __typename\n            name\n          }\n        }\n      }\n      aircraftAttributes {\n        __typename\n        code\n        name\n        operatingCarrierCode\n        cabins {\n          __typename\n          cabinCode\n          cabinName\n          shortCabin\n          businessSeatType\n          Attributes {\n            __typename\n            attributeNumber\n            name\n            description\n            icon\n            shortlist\n            category {\n              __typename\n              name\n            }\n            value {\n              __typename\n              value\n            }\n          }\n        }\n      }\n    }\n    key\n    priorityRewards {\n      __typename\n      source\n      success\n      priorityRewardsApplicable\n      numberRequired\n      totalMatchingRewards\n      information {\n        __typename\n        friendlyName\n        benefitBalanceCode\n        count\n        nextExpiryDate\n        matching\n        bound\n      }\n      applied {\n        __typename\n        benefitBalanceCode\n        friendlyName\n        numberOfRewardsApplied\n        nextExpiryDate\n      }\n      submit {\n        __typename\n        benefitBalanceCode\n        numberOfRewardsApplied\n      }\n    }\n  }\n}"
-        }
+                "query": "query GetFareRedemption($pointOfSale: String!, $currency: String!, $language: String!, $type: String!, $bounds: [SearchBoundInput]!, $passengers: PassengersInput!, $selectionID: String!, $bookingClassCode: String!, $fareBasisCode: String!, $frequentFlyer: String, $sessionID: String, $benefitBalanceCode: String, $numberOfRewards: String, $uid: String, $signature: String, $timestamp: String) {\n  getFareRedemption(pointOfSale: $pointOfSale, currency: $currency, language: $language, type: $type, bounds: $bounds, passengers: $passengers, selectionID: $selectionID, bookingClassCode: $bookingClassCode, fareBasisCode: $fareBasisCode, frequentFlyer: $frequentFlyer, sessionID: $sessionID, benefitBalanceCode: $benefitBalanceCode, numberOfRewards: $numberOfRewards, uid: $uid, signature: $signature, timestamp: $timestamp) {\n    __typename\n    searchInformation {\n      __typename\n      pointOfSale\n      currency\n      language\n      type\n      bounds {\n        __typename\n        origin\n        destination\n        departureDate\n      }\n      passengers {\n        __typename\n        adult\n        youth\n        child\n        infantLap\n        passengerTotal\n      }\n      sessionID\n    }\n    ac2uErrorsWarnings {\n      __typename\n      code\n      type\n      message\n    }\n    errors {\n      __typename\n      lang\n      context\n      systemService\n      systemErrorType\n      systemErrorCode\n      systemErrorMessage\n      friendlyCode\n      friendlyTitle\n      friendlyMessage\n      closeLabel\n      actions {\n        __typename\n        number\n        buttonLabel\n        action\n      }\n    }\n    bound {\n      __typename\n      boundSolution {\n        __typename\n        tripType\n        segmentCount\n        connectionCount\n        containsDirect\n        scheduledDepartureDateTime\n        scheduledArrivalDateTime\n        durationTotal\n        flightSegments {\n          __typename\n          segmentNumber\n          flightNumber\n          originAirport\n          originTerminal\n          destinationAirport\n          destinationTerminal\n          scheduledDepartureDateTime\n          scheduledArrivalDateTime\n          segmentDuration\n          stops {\n            __typename\n            stopAirport\n            disembarkationRequired\n          }\n          lastStop {\n            __typename\n            stopCode\n            stopLocation\n          }\n          equipmentType {\n            __typename\n            aircraftCode\n            aircraftName\n          }\n          airline {\n            __typename\n            operatingCode\n            operatingName\n            marketingCode\n            marketingName\n            userFriendlyCode\n            acOperated\n          }\n          departsEarly\n          stopCount\n          isTrainIndicator\n          isBusIndicator\n        }\n        connection {\n          __typename\n          connectionNumber\n          connectionAirport\n          startTime\n          endTime\n          connectionDuration\n          previousFlight {\n            __typename\n            previousFlightOperatorCode\n            previousFlightNumber\n          }\n          nextFlight {\n            __typename\n            nextFlightOperatorCode\n            nextFlightNumber\n          }\n          overNight\n          isAirportChange\n        }\n        fare {\n          __typename\n          cabins {\n            __typename\n            cabinCode\n            cabinName\n            shortCabin\n            fareAvailable {\n              __typename\n              bookingClass {\n                __typename\n                marketingCode\n                flightNumber\n                bookingClassCode\n                fareBasisCode\n                noOfSeats\n                alertLowSeats\n                comment\n                selectionID\n                meal {\n                  __typename\n                  mealCode\n                  mealName\n                }\n                segmentCabinName\n              }\n              fareFamily\n              shortFareFamily\n              refundable\n              percentageInSelectedCabin\n              promoApplicable\n              priorityRewardApplicable\n              revenueBooking {\n                __typename\n                baseFare\n                feesTotal\n                taxesTotal\n                fareTotal\n                fareTotalRounded\n              }\n              redemptionBooking {\n                __typename\n                cashPortion {\n                  __typename\n                  baseFare\n                  taxesTotal\n                  fareTotal\n                  fareTotalRounded\n                  taxesTotalRounded\n                  currencyCode\n                }\n                pointsPortion {\n                  __typename\n                  baseFarePoints\n                  taxesTotalPoints\n                  fareTotalPoints\n                  baseFarePointsRounded\n                  fareTotalPointsRounded\n                  pointsIndicator\n                  displayFormat {\n                    __typename\n                    displayPoints\n                    displayDollarAmount\n                    displayPointsIndicator\n                  }\n                }\n              }\n              isPureUpsell\n              mixedCabin {\n                __typename\n                mixedNumber\n                marketingCode\n                flightNumber\n                origin\n                destination\n                actualCabinCode\n                actualCabinName\n              }\n              submitReview {\n                __typename\n                segment {\n                  __typename\n                  selectionID\n                  bookingClassCode\n                  fareBasisCode\n                  departureDate\n                  arrivalDate\n                  origin\n                  destination\n                  flightNumber\n                  carrierCode\n                  fareBreakpoint\n                  stopCode\n                  stopCount\n                }\n              }\n              priceRequestInformation {\n                __typename\n                accountCode\n                acPromoInformation {\n                  __typename\n                  promoCode\n                  promoCodeType\n                  discountValue\n                  expiryDate\n                  promoCodeCurrency\n                }\n                acError {\n                  __typename\n                  errorFlag\n                  errorReason\n                  errorMessage\n                  errorCode\n                }\n              }\n            }\n          }\n        }\n        operatingDisclosure\n        carrierType\n      }\n      boundNumber\n      originAirport\n      destinationAirport\n      departureDate\n      cubaDestination\n      market\n      resultSummary {\n        __typename\n        cabinCode\n        cabinName\n        cabinShortName\n        uniqueResult\n        lowestFare\n        lowestFareRounded\n        lowestFareDisplayFormat\n        pointIndicatorDisplayFormat\n      }\n    }\n    benefits {\n      __typename\n      ticketAttributes {\n        __typename\n        fareFamily\n        marketingCarrierCode\n        carrierTypeBenefits\n        Attribute {\n          __typename\n          attributeNumber\n          name\n          description\n          icon\n          shortlist\n          assessment\n          value {\n            __typename\n            value\n          }\n          category {\n            __typename\n            name\n          }\n        }\n      }\n      productAttributes {\n        __typename\n        cabinCode\n        cabinName\n        shortCabin\n        marketingCarrierCode\n        Attributes {\n          __typename\n          attributeNumber\n          name\n          description\n          icon\n          shortlist\n          value {\n            __typename\n            value\n          }\n          category {\n            __typename\n            name\n          }\n        }\n      }\n      aircraftAttributes {\n        __typename\n        code\n        name\n        operatingCarrierCode\n        cabins {\n          __typename\n          cabinCode\n          cabinName\n          shortCabin\n          businessSeatType\n          Attributes {\n            __typename\n            attributeNumber\n            name\n            description\n            icon\n            shortlist\n            category {\n              __typename\n              name\n            }\n            value {\n              __typename\n              value\n            }\n          }\n        }\n      }\n    }\n    key\n    priorityRewards {\n      __typename\n      source\n      success\n      priorityRewardsApplicable\n      numberRequired\n      totalMatchingRewards\n      information {\n        __typename\n        friendlyName\n        benefitBalanceCode\n        count\n        nextExpiryDate\n        matching\n        bound\n      }\n      applied {\n        __typename\n        benefitBalanceCode\n        friendlyName\n        numberOfRewardsApplied\n        nextExpiryDate\n      }\n      submit {\n        __typename\n        benefitBalanceCode\n        numberOfRewardsApplied\n      }\n    }\n  }\n}"
+            }
 
-        response = requests.post(url, headers=headers, cookies=cookies, json=data, auth=self.get_auth())
-        return response
+            auth_signer = self.get_auth_signer()
 
-    def search_for(self, ori: str, des: str, date: str, number_of_passengers: int = 1):
+            data_string = json.dumps(data).encode('utf-8')
+
+            content_hash = hashlib.sha256(data_string).hexdigest()
+
+            headers.update(
+                auth_signer.sign_with_headers("POST", url, headers, content_hash)
+            )
+            print(headers)
+
+            return await session.post(url, headers=headers, json=data)
+            
+
+    async def search_for(self, ori: str, des: str, date: str, number_of_passengers: int = 1):
         ori = ori.upper()
         des = des.upper()
         if number_of_passengers <= 0 or number_of_passengers > 9:
             number_of_passengers = 1
+        print("Search for")
         try:
-            r1 = self.get_air_bounds(ori, des, date, number_of_passengers)
+            r1 = await self.get_air_bounds(ori, des, date, number_of_passengers)
+            print("got response")
             return r1
-        except Exception:
+        except Exception as error:
             # TODO: add log
+            print(f"search_for error: {error}")
             r1 = requests.Response
             r1.status_code = 404
             return requests.Response()
 
+async def main():
+    ac = Ac_Searcher2()
+    # tasks = [ac.get_air_bounds('TYO', 'LAX', '2024-06-07', 1) for i in range (1)]
+    # resp = await asyncio.gather(*tasks)
+    r = await ac.get_air_bounds('TYO', 'LAX', '2024-06-07', 1)
+    print(r.__dict__)
+    # r1 = await ac.get_air_bounds('TYO', 'LAX', '2024-06-07', 1)
+    # print(r1.text)
+    # for r in resp:
+    #     print(await r.json())
 
 if __name__ == '__main__':
-    ac = Ac_Searcher2()
-    r1 = ac.get_air_bounds('TYO', 'LAX', '2023-06-07', 1)
-    print(r1.text)
+    asyncio.run(main())
