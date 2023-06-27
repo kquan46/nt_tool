@@ -214,7 +214,7 @@ class Ac_Searcher2():
         try:
             r1 = self.get_air_bounds(ori, des, date, number_of_passengers)
             return r1
-        except:
+        except Exception:
             # TODO: add log
             r1 = requests.Response
             r1.status_code = 404

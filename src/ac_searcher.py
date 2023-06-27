@@ -163,7 +163,7 @@ class Ac_Searcher():
             self.get_market_token(ori, des, date)
             r1 = self.get_air_bounds(ori, des, date, ac_searcher_cabin_class)
             return r1
-        except:
+        except Exception:
             # TODO: add log
             r1 = requests.Response
             r1.status_code = 404
