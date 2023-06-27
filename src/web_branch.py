@@ -6,11 +6,11 @@ from aa_searcher import Aa_Searcher
 from dl_searcher import Dl_Searcher
 from nt_filter import AirBoundFilter, SearchEngineFilter, filter_airbounds, filter_prices, filter_search_engine
 from nt_models import AirBound, PriceFilter, CabinClass
-from nt_parser import results_to_dash_table, convert_ac_response_to_models, \
+from nt_parser import results_to_dash_table, convert_ac_response_to_models2, \
     convert_aa_response_to_models, convert_dl_response_to_models
 from dash import Dash, dash_table, html, dcc, Output, State, Input, ctx
 import dash_bootstrap_components as dbc
-from ac_searcher import Ac_Searcher
+from ac_searcher2 import Ac_Searcher2
 from nt_sorter import get_default_sort_options, sort_airbounds
 from utils import date_range
 
@@ -131,8 +131,8 @@ class DashApp:
             prevent_initial_call=True
         )
         def search_results(n_clicks, origins, destinations, start_date, end_date):
-            searchers = [Ac_Searcher(), Aa_Searcher(), Dl_Searcher()]
-            converters = [convert_ac_response_to_models, convert_aa_response_to_models, convert_dl_response_to_models]
+            searchers = [Ac_Searcher2(), Aa_Searcher(), Dl_Searcher()]
+            converters = [convert_ac_response_to_models2, convert_aa_response_to_models, convert_dl_response_to_models]
             if n_clicks == 0:
                 return results_to_dash_table([])
             origins = [''.join(ori.split()) for ori in origins.split(',')]
