@@ -228,8 +228,14 @@ def convert_ac_response_to_models2(response: requests.Response) -> List:
         return list()
     else:
         response_json = response.json()
-        temp1 = response_json.get('data', {}).get('getFareRedemption', {}).get('bound',
+        try:
+            temp1 = response_json.get('data', {}).get('getFareRedemption', {}).get('bound',
                                                                                []) if response_json is not None else {}
+        except AttributeError as error:
+            print("Caught attribute error")
+            print(f"response text: {response.text}")
+            print(f"error: {error}")
+            temp1 = {}
         air_bounds_json = temp1[0]['boundSolution'] if len(temp1) > 0 else []
         results = []
         saver_class_list = ['X', 'I', 'A']
@@ -255,7 +261,7 @@ def convert_ac_response_to_models2(response: requests.Response) -> List:
                 segs.append(temp_seg)
 
             for pr in prices_raw:
-                # price_raw now means the lowest of every physical cabin
+                # price_raw now means the flexible reward of every physical cabin
                 # filter AC flight without saver class code
                 # if pr['bookingClass']['marketingCode'] == 'AC' \
                 #         and pr['bookingClass']['bookingClassCode'] not in saver_class_list:
@@ -273,8 +279,8 @@ def convert_ac_response_to_models2(response: requests.Response) -> List:
                 temp_pricing = Pricing(
                     cabin_class=CabinClass[cabin_class],
                     quota=9,  # no info from raw
-                    excl_miles=pr['fareAvailable'][0]['redemptionBooking']['pointsPortion']['baseFarePoints'],
-                    excl_cash_in_base_unit=pr['fareAvailable'][0]['redemptionBooking']['cashPortion']['taxesTotal'],
+                    excl_miles=pr['fareAvailable'][-1]['redemptionBooking']['pointsPortion']['baseFarePoints'],
+                    excl_cash_in_base_unit=pr['fareAvailable'][-1]['redemptionBooking']['cashPortion']['taxesTotal'],
                     excl_currency='CAD',
                     is_mix=False,
                     mix_detail='N/A'
