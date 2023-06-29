@@ -299,11 +299,11 @@ async def convert_ac_response_to_models2(response: requests.Response) -> List:
         return results
 
 
-def convert_aa_response_to_models(response: requests.Response) -> List:
-    if response.status_code != 200:
+async def convert_aa_response_to_models(response: requests.Response) -> List:
+    if response.status != 200:
         return []
     else:
-        response_json = response.json()
+        response_json = await response.json()
         air_bounds_json = response_json.get('slices', []) if response_json is not None else []
         aa_saver_max_miles = 3 * min(
             int((response_json.get('utag', {}) if response_json is not None else {}).get('lowest_award_selling_miles',

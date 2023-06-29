@@ -1,4 +1,5 @@
 aws-requests-auth==0.4.3
+aiohttp==3.8.4
 boto3==1.26.92
 pandas==1.5.3
 numpy==1.24.2
