@@ -4,3 +4,6 @@ __pycache__
 
 *.iml
 *.pyc
+
+venv*/
+output/
