@@ -7,27 +7,27 @@ from ac_searcher import Ac_Searcher
 from utils import date_range
 
 if __name__ == '__main__':
-    origins = ['SHA']
-    destinations = ['TYO']
-    start_dt = '2023-06-20'
-    end_dt = '2023-06-20'
+    origins = ['YVR']
+    destinations = ['LHR']
+    start_dt = '2024-05-08'
+    end_dt = '2024-05-10'
     dates = date_range(start_dt, end_dt)
     #  means eco, pre, biz and first
     cabin_class = [
-        "ECO",
-        "PRE",
+        # "ECO",
+        # "PRE",
         "BIZ",
         "FIRST"
     ]
     airbound_filter = AirBoundFilter(
-        max_stops=1,
+        max_stops=3,
         airline_include=[],
         airline_exclude=[],
     )
     price_filter = PriceFilter(
         min_quota=1,
-        max_miles_per_person=999999,
-        preferred_classes=[CabinClass.J, CabinClass.F, CabinClass.Y],
+        max_miles_per_person=80000,
+        preferred_classes=[CabinClass.J, CabinClass.F],
         mixed_cabin_accepted=True
     )
     # seg_sorter = {

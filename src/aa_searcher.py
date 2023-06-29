@@ -1,11 +1,11 @@
 from typing import List
-
+import aiohttp
 import requests
 import json
 
 
 class Aa_Searcher():
-    def get_air_bounds(self, ori: str, des: str, date: str) -> requests.Response:
+    async def get_air_bounds(self, session: aiohttp.ClientSession, ori: str, des: str, date: str) -> requests.Response:
         headers = {
             "authority": "www.aa.com",
             "accept": "application/json, text/plain, */*",
@@ -68,10 +68,11 @@ class Aa_Searcher():
                 "solutionId": ""
             }
         }
-        response = requests.post(url, headers=headers, json=data)
-        return response
+        async with session.post(url, headers=headers, json=data) as resp:
+            await resp.read()
+            return resp
 
-    def search_for(self, ori: str, des: str, date: str):
+    async def search_for(self, session: aiohttp.ClientSession, ori: str, des: str, date: str):
         # if cabin_class is None:
         #     cabin_class = [
         #         "ECO",
@@ -92,7 +93,7 @@ class Aa_Searcher():
         des = des.upper()
         aa_searcher_cabin_class = []
         try:
-            r1 = self.get_air_bounds(ori, des, date)
+            r1 = await self.get_air_bounds(session, ori, des, date)
             return r1
         except:
             # TODO: add log

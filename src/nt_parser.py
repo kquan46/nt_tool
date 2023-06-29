@@ -218,16 +218,16 @@ def convert_ac_response_to_models(response: requests.Response) -> List:
         return results
 
 
-def convert_ac_response_to_models2(response: requests.Response) -> List:
+async def convert_ac_response_to_models2(response: requests.Response) -> List:
     """
     Convert response from searcher request.
     param response: Response of searcher request.
     :return: List of nested json. Each json means an itinerary.
     """
-    if response.status_code != 200:
+    if response.status != 200:
         return list()
     else:
-        response_json = response.json()
+        response_json = await response.json()
         try:
             temp1 = response_json.get('data', {}).get('getFareRedemption', {}).get('bound',
                                                                                []) if response_json is not None else {}
@@ -299,11 +299,11 @@ def convert_ac_response_to_models2(response: requests.Response) -> List:
         return results
 
 
-def convert_aa_response_to_models(response: requests.Response) -> List:
-    if response.status_code != 200:
+async def convert_aa_response_to_models(response: requests.Response) -> List:
+    if response.status != 200:
         return []
     else:
-        response_json = response.json()
+        response_json = await response.json()
         air_bounds_json = response_json.get('slices', []) if response_json is not None else []
         aa_saver_max_miles = 3 * min(
             int((response_json.get('utag', {}) if response_json is not None else {}).get('lowest_award_selling_miles',
