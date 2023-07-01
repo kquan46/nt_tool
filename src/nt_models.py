@@ -128,8 +128,9 @@ class Pricing(BaseModel):
     miles: Computed[str]
 
     @computed('miles')
-    def convert_cash(excl_miles: int, **kwargs):
-        return str(round(excl_miles / 1000, 1)) + 'k'
+    def convert_miles(excl_miles: int, **kwargs):
+        # return str(round(excl_miles / 1000, 1)) + 'K'
+        return excl_miles
 
     excl_cash_in_base_unit: float
     excl_currency: str
@@ -137,9 +138,10 @@ class Pricing(BaseModel):
 
     @computed('cash')
     def convert_cash(excl_cash_in_base_unit: float, excl_currency: str, **kwargs):
-        return excl_currency + str(round(excl_cash_in_base_unit, 2))
+        return  round(excl_cash_in_base_unit, 2)
 
     is_mix: bool = Optional[bool]
+    pct_in_cabin: int = Optional[int]
     mix_detail: str = Optional[str]
 
     class Config:
