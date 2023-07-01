@@ -13,26 +13,50 @@ BATCH_SIZE = 100
 
 async def main():
     origins = [
-        'YVR',
-        # 'TYO',
-        # 'YYZ',
-        # 'YYC'
-        # 'YUL',
-        # 'LHR', 'AMS', 'BRU', "ZRH", "GVA", "NCE", "CDG", "LYS", "MXP",
-        # 'IST',
-        ]
-    destinations = [
         # 'YVR',
         'TYO',
         # 'YYZ',
         # 'YYC',
         # 'YUL',
+<<<<<<< HEAD
         # 'LHR', 'AMS', 'BRU', "ZRH", "GVA", "NCE", "CDG", "LYS", "MXP",
         # 'IST',
         ]
 
     start_dt = '2024-05-07'
     end_dt = '2024-05-25'
+=======
+        # 'LHR',
+        # 'AMS',
+        # 'BRU',
+        # "ZRH",
+        # "GVA",
+        # "NCE",
+        # "CDG",
+        # "LYS",
+        # "MXP",
+        # 'IST',
+        ]
+    destinations = [
+        'YVR',
+        # 'TYO',
+        # 'YYZ',
+        # 'YYC',
+        # 'LHR',
+        # 'AMS',
+        # 'BRU',
+        # "ZRH",
+        # "GVA",
+        # "NCE",
+        # "CDG",
+        # "LYS",
+        # "MXP",
+        # 'IST',
+        ]
+
+    start_dt = '2024-05-25'
+    end_dt = '2024-06-10'
+>>>>>>> 0fc747b (Update aa/ac usage)
     dates = date_range(start_dt, end_dt)
     number_of_passengers = 2
     airbound_filter = AirBoundFilter(
@@ -42,7 +66,7 @@ async def main():
     )
     price_filter = PriceFilter(
         min_quota=1,
-        max_miles_per_person=95000,
+        max_miles_per_person=100000,
         preferred_classes=[CabinClass.J, CabinClass.F],
         mixed_cabin_accepted=True
     )

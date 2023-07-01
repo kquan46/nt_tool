@@ -13,16 +13,19 @@ from utils import date_range
 
 async def main():
     origins = [
-        # 'YVR', 'SEA', 'LAX', 'SFO',
-        'HKG'
+        'YVR',
+        'SEA', 'LAX', 'SFO',
+        # 'HKG'
         ]
     destinations = [
         # 'LHR', 'AMS', 'BRU', "ZRH", "GVA", "NCE", "CDG", "LYS", "MXP"
         # 'HKG',
-        'YVR', 'SEA', 'LAX', 'SFO'
+        # 'YVR', 'SEA', 'LAX', 'SFO'
+        # 'ZRH'
+        'MXP'
         ]
-    start_dt = '2023-07-01'
-    end_dt = '2024-05-26'
+    start_dt = '2024-05-05'
+    end_dt = '2024-05-15'
     dates = date_range(start_dt, end_dt)
     #  cabin class removed, pls use price filter.
     airbound_filter = AirBoundFilter(
