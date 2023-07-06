@@ -145,6 +145,9 @@ class Ac_Searcher2():
         }
         response = requests.post(url, headers=headers, json=data)
         r1 = response.json()
+        if not response.ok:
+            print(response.text)
+            response.raise_for_status()
         self.access_key = r1['Credentials']['AccessKeyId']
         self.secret_key = r1['Credentials']['SecretKey']
         self.session_token = r1['Credentials']['SessionToken']
@@ -226,7 +229,7 @@ class Ac_Searcher2():
             # TODO: add log
             print(f"search_for error: {error}")
             r1 = requests.Response
-            r1.status_code = 404
+            r1.status_code = 500
             return requests.Response()
 
 

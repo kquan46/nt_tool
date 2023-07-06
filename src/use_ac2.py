@@ -1,11 +1,14 @@
 import asyncio
 import aiohttp
-from datetime import datetime, timedelta
+from datetime import datetime
 from nt_models import CabinClass, PriceFilter
 from nt_parser import results_to_excel, convert_ac_response_to_models2
 from nt_filter import filter_prices, filter_airbounds, AirBoundFilter
 from ac_searcher2 import Ac_Searcher2
 from utils import date_range
+from types import SimpleNamespace
+
+BATCH_SIZE = 100
 
 
 async def main():
@@ -20,15 +23,16 @@ async def main():
         ]
     destinations = [
         # 'YVR',
-        # 'TYO',
+        'TYO',
         # 'YYZ',
         # 'YYC',
+        # 'YUL',
         # 'LHR', 'AMS', 'BRU', "ZRH", "GVA", "NCE", "CDG", "LYS", "MXP",
-        'IST',
+        # 'IST',
         ]
 
-    start_dt = '2024-05-01'
-    end_dt = '2024-05-15'
+    start_dt = '2024-05-07'
+    end_dt = '2024-05-25'
     dates = date_range(start_dt, end_dt)
     number_of_passengers = 2
     airbound_filter = AirBoundFilter(
@@ -47,13 +51,15 @@ async def main():
     #     'ascending': True
     # }
 
-    acs = Ac_Searcher2()
+    airbounds = []
     connector = aiohttp.TCPConnector(limit=2)
     async with aiohttp.ClientSession(connector=connector) as session:
-        airbounds = await asyncio.gather(
-            *(search_ac(session, acs, ori, des, date, number_of_passengers) for ori in origins for des in destinations for date in dates)
-        )
-        airbounds = [airbound for airbounds_sublist in airbounds for airbound in airbounds_sublist]
+        tasks = [SimpleNamespace(ori=ori, des=des, date=date) for ori in origins for des in destinations for date in dates]
+        sublists = (tasks[i:i+BATCH_SIZE] for i in range(0, len(tasks), BATCH_SIZE))
+        for sublist in sublists:
+            acs = Ac_Searcher2()
+            airbounds_sublist = await asyncio.gather(*(search_ac(session, acs, airbound.ori, airbound.des, airbound.date, number_of_passengers) for airbound in sublist))
+            airbounds.extend([airbound for airbounds_chunks in airbounds_sublist for airbound in airbounds_chunks])
 
     airbounds = filter_airbounds(airbounds, airbound_filter)
     airbounds = filter_prices(airbounds, price_filter)
@@ -70,7 +76,7 @@ async def search_ac(session, acs, ori, des, date, number_of_passengers):
         status = response.status if hasattr(response, "status") else "N/A"
         print(f'search for {ori} to {des} on {date} - {status}')
         if not response.ok:
-            print(await response.text())
+            print(f"{response.real_url}\n{await response.text()}")
             await asyncio.sleep(5)
         airbound = await convert_ac_response_to_models2(response)
         return airbound
