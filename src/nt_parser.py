@@ -4,6 +4,7 @@ import re
 
 import pandas as pd
 import requests
+import os
 from styleframe import StyleFrame, Styler
 
 from nt_models import Pricing, Segment, AirBound, CabinClass
@@ -452,22 +453,26 @@ def convert_dl_response_to_models(response: requests.Response) -> List:
 def results_to_excel(results, out_file_dir: Optional[str] = '../output', out_file_name: Optional[str] = 'output.xlsx'):
     if len(results) == 0:
         print('No results at all, finished.')
-    else:
-        df = pd.DataFrame(results)
-        df.reset_index()
-        width_dict = {}
-        for col in df.columns.tolist():
-            series = df[col]
-            max_len = max((
-                series.astype(str).map(len).max(),  # len of largest item
-                len(str(series.name))  # len of column name/header
-            )) * 1.4 + 1
-            width_dict[col] = max_len
-        sf = StyleFrame(df, styler_obj=Styler())
-        sf.set_column_width_dict(width_dict)
-        with StyleFrame.ExcelWriter(f'{out_file_dir}/{out_file_name}') as writer:
-            sf.to_excel(writer, row_to_add_filters=0)
-        print('Success! Please check the output excel file.')
+        return
+
+    if not os.path.exists(out_file_dir):
+        os.makedirs(out_file_dir, exist_ok=True)
+
+    df = pd.DataFrame(results)
+    df.reset_index()
+    width_dict = {}
+    for col in df.columns.tolist():
+        series = df[col]
+        max_len = max((
+            series.astype(str).map(len).max(),  # len of largest item
+            len(str(series.name))  # len of column name/header
+        )) * 1.4 + 1
+        width_dict[col] = max_len
+    sf = StyleFrame(df, styler_obj=Styler())
+    sf.set_column_width_dict(width_dict)
+    with StyleFrame.ExcelWriter(os.path.join(out_file_dir, out_file_name)) as writer:
+        sf.to_excel(writer, row_to_add_filters=0)
+    print('Success! Please check the output excel file.')
 
 
 def results_to_dash_table(results):

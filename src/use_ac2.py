@@ -48,7 +48,8 @@ async def run_query(origins: list, destinations: list, start_dt: str, end_dt: st
     results.sort(key=lambda k: (k['miles'], k['cash'], k['departure_time'], k['duration_in_all']))
 
     result_file_name = f'AC_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{"-".join(origins)}_to_{"-".join(destinations)}.xlsx'
-    results_to_excel(results, out_file_name=result_file_name)
+    result_file_dir = f'../output/{date.today().isoformat()}'
+    results_to_excel(results, out_file_dir=result_file_dir, out_file_name=result_file_name)
 
 
 async def search_ac(session, acs, ori, des, date, number_of_passengers):
