@@ -26,10 +26,7 @@ async def run_query(origins: list, destinations: list, start_dt: str, end_dt: st
         max_miles_per_person=120000,
         max_cash_per_person=300,
     )
-    # seg_sorter = {
-    #     'key': 'departure_time',  # only takes 'duration_in_all', 'stops', 'departure_time' and 'arrival_time'.
-    #     'ascending': True
-    # }
+
     airbounds = []
     connector = aiohttp.TCPConnector(limit=ASYNC_LIMIT)
     async with aiohttp.ClientSession(connector=connector) as session:
@@ -46,10 +43,10 @@ async def run_query(origins: list, destinations: list, start_dt: str, end_dt: st
 
     airbounds = filter_airbounds(airbounds, airbound_filter)
     airbounds = filter_prices(airbounds, price_filter)
-    results = []
-    for x in airbounds:
-        results.extend(x.to_flatted_list())
+
+    results = [result for x in airbounds for result in x.to_flatted_list()]
     results.sort(key=lambda k: (k['miles'], k['cash'], k['departure_time'], k['duration_in_all']))
+
     result_file_name = f'AC_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{"-".join(origins)}_to_{"-".join(destinations)}.xlsx'
     results_to_excel(results, out_file_name=result_file_name)
 
