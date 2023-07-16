@@ -67,6 +67,10 @@ def convert_mix(availabilityDetails) -> str:
     return "+".join([str(x['mileagePercentage']) + '%' + cabin_dict[x['cabin']] for x in availabilityDetails])
 
 
+def convert_ac_mix2(mixedCabin: list) -> str:
+    return " + ".join([f"{x['origin']}->{x['destination']} {x['actualCabinCode']}" for x in mixedCabin])
+
+
 def calculate_aa_mix_by_segment(target_cabin_class: CabinClass, duration_list: List[timedelta],
                                 cabin_exist_list: List[List[CabinClass]]):
     total_duration = sum([x.total_seconds() for x in duration_list])
@@ -282,8 +286,9 @@ async def convert_ac_response_to_models2(response: requests.Response) -> List:
                     excl_miles=pr['fareAvailable'][-1]['redemptionBooking']['pointsPortion']['baseFarePoints'],
                     excl_cash_in_base_unit=pr['fareAvailable'][-1]['redemptionBooking']['cashPortion']['taxesTotal'],
                     excl_currency='CAD',
-                    is_mix=False,
-                    mix_detail='N/A'
+                    is_mix=pr['fareAvailable'][-1]['percentageInSelectedCabin'] < 100,
+                    mix_detail=convert_ac_mix2(pr['fareAvailable'][-1]['mixedCabin']),
+                    cabin_class_pct=pr['fareAvailable'][-1]['percentageInSelectedCabin'],
                 )
                 prices.append(temp_pricing)
 
@@ -456,12 +461,12 @@ def results_to_excel(results, out_file_dir: Optional[str] = '../output', out_fil
             max_len = max((
                 series.astype(str).map(len).max(),  # len of largest item
                 len(str(series.name))  # len of column name/header
-            )) * 1.2 + 1
+            )) * 1.4 + 1
             width_dict[col] = max_len
         sf = StyleFrame(df, styler_obj=Styler())
         sf.set_column_width_dict(width_dict)
-        writer = sf.to_excel(f'{out_file_dir}/{out_file_name}', row_to_add_filters=0)
-        writer.save()
+        with StyleFrame.ExcelWriter(f'{out_file_dir}/{out_file_name}') as writer:
+            sf.to_excel(writer, row_to_add_filters=0)
         print('Success! Please check the output excel file.')
 
 

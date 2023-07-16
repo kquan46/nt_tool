@@ -128,8 +128,9 @@ class Pricing(BaseModel):
     miles: Computed[str]
 
     @computed('miles')
-    def convert_cash(excl_miles: int, **kwargs):
-        return str(round(excl_miles / 1000, 1)) + 'k'
+    def convert_miles(excl_miles: int, **kwargs):
+        # return str(round(excl_miles / 1000, 1)) + 'K'
+        return excl_miles
 
     excl_cash_in_base_unit: float
     excl_currency: str
@@ -137,9 +138,10 @@ class Pricing(BaseModel):
 
     @computed('cash')
     def convert_cash(excl_cash_in_base_unit: float, excl_currency: str, **kwargs):
-        return excl_currency + str(round(excl_cash_in_base_unit, 2))
+        return  round(excl_cash_in_base_unit, 2)
 
     is_mix: bool = Optional[bool]
+    cabin_class_pct: int = Optional[int]
     mix_detail: str = Optional[str]
 
     class Config:
@@ -150,7 +152,9 @@ class PriceFilter(BaseModel):
     min_quota: int = 1
     preferred_classes: List[CabinClass] = [CabinClass.F, CabinClass.J, CabinClass.W, CabinClass.Y]
     max_miles_per_person: int = 9999999
+    max_cash_per_person: int = 9999999
     mixed_cabin_accepted: bool = True
+    min_cabin_class_pct: int = 0
 
 
 class AirBound(BaseModel):
@@ -249,8 +253,10 @@ class AirBound(BaseModel):
             x = all([
                 pr.quota >= price_filter.min_quota,
                 pr.cabin_class in price_filter.preferred_classes,
+                True if price_filter.mixed_cabin_accepted else not pr.is_mix,
+                pr.cabin_class_pct >= price_filter.min_cabin_class_pct,
                 pr.excl_miles <= price_filter.max_miles_per_person,
-                True if price_filter.mixed_cabin_accepted else not pr.is_mix
+                pr.excl_cash_in_base_unit <= price_filter.max_cash_per_person
                 # always True if accepted, else only return not mix
             ])
             if x:
