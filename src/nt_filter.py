@@ -10,8 +10,10 @@ class AirBoundFilter(BaseModel):
     airline_include: List[str] = []
     airline_exclude: List[str] = []
 
+
 class SearchEngineFilter(BaseModel):
     search_engine: List[str] = []
+
 
 def filter_airbounds(airbounds: List[AirBound], airbound_filter: AirBoundFilter) -> List[AirBound]:
     result = []

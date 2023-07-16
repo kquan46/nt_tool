@@ -288,7 +288,7 @@ async def convert_ac_response_to_models2(response: requests.Response) -> List:
                     excl_currency='CAD',
                     is_mix=pr['fareAvailable'][-1]['percentageInSelectedCabin'] < 100,
                     mix_detail=convert_ac_mix2(pr['fareAvailable'][-1]['mixedCabin']),
-                    pct_in_cabin=pr['fareAvailable'][-1]['percentageInSelectedCabin'],
+                    cabin_class_pct=pr['fareAvailable'][-1]['percentageInSelectedCabin'],
                 )
                 prices.append(temp_pricing)
 
@@ -461,12 +461,12 @@ def results_to_excel(results, out_file_dir: Optional[str] = '../output', out_fil
             max_len = max((
                 series.astype(str).map(len).max(),  # len of largest item
                 len(str(series.name))  # len of column name/header
-            )) * 1.2 + 1
+            )) * 1.4 + 1
             width_dict[col] = max_len
         sf = StyleFrame(df, styler_obj=Styler())
         sf.set_column_width_dict(width_dict)
-        writer = sf.to_excel(f'{out_file_dir}/{out_file_name}', row_to_add_filters=0)
-        writer.save()
+        with StyleFrame.ExcelWriter(f'{out_file_dir}/{out_file_name}') as writer:
+            sf.to_excel(writer, row_to_add_filters=0)
         print('Success! Please check the output excel file.')
 
 
