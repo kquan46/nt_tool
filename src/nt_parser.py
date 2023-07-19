@@ -200,7 +200,8 @@ def convert_ac_response_to_models(response: requests.Response) -> List:
             for sg in segs_raw:
                 flight_info = flights_info_dict[sg['flightId']]
                 temp_seg = Segment(
-                    flight_code=flight_info['marketingAirlineCode'] + flight_info['marketingFlightNumber'],
+                    airline=flight_info['marketingAirlineCode'],
+                    flight_number=flight_info['marketingFlightNumber'],
                     aircraft=flight_info['aircraftCode'],
                     departure=flight_info['departure']['locationCode'],  # TODO limit the str to only 3 chars
                     excl_departure_time=flight_info['departure']['dateTime'],
@@ -254,7 +255,8 @@ async def convert_ac_response_to_models2(response: requests.Response) -> List:
             segs = []
             for sg in segs_raw:
                 temp_seg = Segment(
-                    flight_code=sg['airline']['operatingCode'] + sg['flightNumber'],
+                    airline=sg['airline']['operatingCode'],
+                    flight_number=sg['flightNumber'],
                     aircraft=sg['equipmentType']['aircraftCode'],
                     departure=sg['originAirport'],
                     excl_departure_time=sg['scheduledDepartureDateTime'],
@@ -328,7 +330,8 @@ async def convert_aa_response_to_models(response: requests.Response) -> List:
         segs = []
         for sg in segs_raw:
             temp_seg = Segment(
-                flight_code=sg['flight']['carrierCode'] + sg['flight']['flightNumber'],
+                airline=sg['flight']['carrierCode'],
+                flight_number=sg['flight']['flightNumber'],
                 aircraft=sg['legs'][0]['aircraft']['code'],
                 departure=sg['origin']['code'],  # TODO limit the str to only 3 chars
                 excl_departure_time=sg['departureDateTime'],
@@ -393,7 +396,8 @@ def convert_dl_response_to_models(response: requests.Response) -> List:
             segs = []
             for sg in segs_raw:
                 temp_seg = Segment(
-                    flight_code=sg['marketAirline']['code'] + sg['flightNumber'],
+                    airline=sg['marketAirline']['code'],
+                    flight_number=sg['flightNumber'],
                     aircraft=sg['aircraftCode'],
                     departure=sg['origin']['airportCode'],  # TODO limit the str to only 3 chars
                     excl_departure_time=sg['departureDate'] + 'T' + sg['departureTime'],

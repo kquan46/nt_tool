@@ -87,7 +87,8 @@ class CabinClass(str, Enum):
 
 
 class Segment(BaseModel):
-    flight_code: str
+    airline: str
+    flight_number: str
     aircraft: str
     departure: str  # TODO limit the str to only 3 chars
     excl_departure_time: datetime
@@ -174,7 +175,13 @@ class AirBound(BaseModel):
 
     @computed('flight_codes')
     def calculate_aircrafts(segments: List[Segment], **kwargs):
-        return '-'.join([str(x.flight_code) for x in segments])
+        return '-'.join([str(x.airline) + str(x.flight_number) for x in segments])
+
+    excl_airlines: Computed[set]
+
+    @computed('excl_airlines')
+    def calculate_aircrafts(segments: List[Segment], **kwargs):
+        return set(x.airline for x in segments)
 
     aircrafts: Computed[str]
 
@@ -239,6 +246,7 @@ class AirBound(BaseModel):
             'excl_duration_in_all_in_seconds': True,
             'excl_departure_time': True,
             'excl_arrival_time': True,
+            'excl_airlines': True,
             'price': {'__all__': {'excl_cash_in_base_unit', 'excl_currency', 'excl_miles'}},
             'segments': False
         }
