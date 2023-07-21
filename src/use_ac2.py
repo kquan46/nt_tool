@@ -13,12 +13,12 @@ BATCH_SIZE = 50
 ASYNC_LIMIT = 2
 
 
-async def run_query(origins: list, destinations: list, start_dt: str, end_dt: str, passengers: int):
+async def search(origins: list, destinations: list, start_dt: str, end_dt: str, passengers: int):
     dates = date_range(start_dt, end_dt)
     airbound_filter = AirBoundFilter(
         max_stops=4,
         airline_include=[],
-        airline_exclude=[],
+        airline_exclude=["4Y", "AI"],
     )
     price_filter = PriceFilter(
         preferred_classes=[CabinClass.J, CabinClass.F],
@@ -27,6 +27,15 @@ async def run_query(origins: list, destinations: list, start_dt: str, end_dt: st
         max_cash_per_person=300,
     )
 
+    results = await search_async(origins, destinations, dates, passengers, airbound_filter, price_filter)
+
+    result_file_name = f'AC_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{"-".join(origins)}_to_{"-".join(destinations)}.xlsx'
+    result_file_dir = '../output'
+
+    results_to_excel(results, out_file_dir=result_file_dir, out_file_name=result_file_name)
+
+
+async def search_async(origins: list, destinations: list, dates: list, passengers: int, airbound_filter: AirBoundFilter, price_filter: PriceFilter):
     airbounds = []
     connector = aiohttp.TCPConnector(limit=ASYNC_LIMIT)
     async with aiohttp.ClientSession(connector=connector) as session:
@@ -47,9 +56,7 @@ async def run_query(origins: list, destinations: list, start_dt: str, end_dt: st
     results = [result for x in airbounds for result in x.to_flatted_list()]
     results.sort(key=lambda k: (k['miles'], k['cash'], k['departure_time'], k['duration_in_all']))
 
-    result_file_name = f'AC_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{"-".join(origins)}_to_{"-".join(destinations)}.xlsx'
-    result_file_dir = f'../output/{date.today().isoformat()}'
-    results_to_excel(results, out_file_dir=result_file_dir, out_file_name=result_file_name)
+    return results
 
 
 async def search_ac(session, acs, ori, des, date, number_of_passengers):
@@ -71,41 +78,9 @@ async def main():
     tomorrow =  (date.today() + timedelta(days=1)).isoformat()
     one_year = (date.today() + timedelta(days=365)).isoformat()
 
-    # await run_query(start_dt="2024-05-04", end_dt="2024-05-10", passengers=2, origins=["YVR"], destinations=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP", "INN", "BSL", "STR", "FRA", "MUC"])
-    # await asyncio.sleep(60*5)
+    await search(start_dt="2024-05-04", end_dt="2024-05-10", passengers=2, origins=["YVR"], destinations=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP", "INN", "BSL", "STR", "FRA", "MUC"])
 
-    # await run_query(start_dt="2024-05-25", end_dt="2024-06-05", passengers=2, origins=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP", "INN", "BSL", "STR", "FRA", "MUC"], destinations=["YVR"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2024-05-05", end_dt="2024-05-15", passengers=2, origins=["YVR", "YYC"], destinations=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2024-05-25", end_dt="2024-06-10", passengers=2, origins=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP"], destinations=["YVR", "YYC"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2024-05-05", end_dt="2024-05-15", passengers=2, origins=["YYZ", "YUL"], destinations=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2024-05-25", end_dt="2024-06-10", passengers=2, origins=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP"], destinations=["YYZ", "YUL"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt=tomorrow, end_dt=one_year, passengers=1, origins=["YVR"], destinations=["HKG"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt=tomorrow, end_dt=one_year, passengers=1, origins=["HKG"], destinations=["YVR"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2023-10-01", end_dt=one_year, passengers=1, origins=["YVR"], destinations=["TYO"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2023-10-01", end_dt=one_year, passengers=1, origins=["TYO"], destinations=["YVR"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2023-10-01", end_dt=one_year, passengers=1, origins=["YVR"], destinations=["OSA"])
-    # await asyncio.sleep(60*5)
-
-    # await run_query(start_dt="2023-10-01", end_dt=one_year, passengers=1, origins=["OSA"], destinations=["YVR"])
-
+    await search(start_dt="2024-05-25", end_dt="2024-06-05", passengers=2, origins=["LHR", "AMS", "ZRH", "GVA", "LYS", "MXP", "INN", "BSL", "STR", "FRA", "MUC"], destinations=["YVR"])
 
 
 if __name__ == '__main__':
